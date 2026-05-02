@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Bunga Cinta"
+version = "1.0.0"
+id = "artifacts/bunga-cinta"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22420
+
+[services.development]
+run = "pnpm --filter @workspace/bunga-cinta run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/bunga-cinta", "run", "build" ]
+publicDir = "artifacts/bunga-cinta/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22420"
+BASE_PATH = "/"
