@@ -261,6 +261,67 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after { inset: -1px; }
 }
 
+/* ============ CSS-only animations (GPU-composited, no JS overhead) ============ */
+
+/* Falling petals in Intro */
+@keyframes petalFall {
+  0%   { transform: translateY(-10px) translateX(0) rotate(0deg);   opacity: 0; }
+  5%   { opacity: 0.82; }
+  95%  { opacity: 0.5; }
+  100% { transform: translateY(110vh) translateX(var(--petal-drift, 40px)) rotate(var(--petal-rotate-end, 360deg)); opacity: 0; }
+}
+
+.petal-fall {
+  position: absolute;
+  top: -20px;
+  animation-name: petalFall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+/* Floating petals in FlowerDetail */
+@keyframes petalFloat {
+  0%   { transform: translateY(0) rotate(0deg);   opacity: 0.15; }
+  50%  { transform: translateY(-18px) rotate(180deg); opacity: 0.28; }
+  100% { transform: translateY(0) rotate(360deg); opacity: 0.15; }
+}
+
+.petal-float {
+  animation-name: petalFloat;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+/* Firefly particles in Garden */
+@keyframes fireflyPulse {
+  0%   { transform: translateY(0) scale(1);   opacity: 0.2; }
+  50%  { transform: translateY(-22px) scale(1.4); opacity: 0.65; }
+  100% { transform: translateY(0) scale(1);   opacity: 0.2; }
+}
+
+.firefly {
+  animation-name: fireflyPulse;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+/* Flower stem sway — rotate only (translateX handled by parent) */
+@keyframes sway1 { 0%,100%{transform:rotate(-2deg)}   50%{transform:rotate(2deg)} }
+@keyframes sway2 { 0%,100%{transform:rotate(-1.5deg)} 50%{transform:rotate(2.5deg)} }
+@keyframes sway3 { 0%,100%{transform:rotate(-2.5deg)} 50%{transform:rotate(1.5deg)} }
+@keyframes sway4 { 0%,100%{transform:rotate(-1deg)}   50%{transform:rotate(3deg)} }
+@keyframes sway5 { 0%,100%{transform:rotate(-2deg)}   50%{transform:rotate(1deg)} }
+
+.sway-1 { animation: sway1 4s   ease-in-out infinite; }
+.sway-2 { animation: sway2 4.4s ease-in-out infinite; }
+.sway-3 { animation: sway3 3.2s ease-in-out infinite; }
+.sway-4 { animation: sway4 5s   ease-in-out infinite; }
+.sway-5 { animation: sway5 4s   ease-in-out infinite; }
+
+/* Legacy .petal class (kept for compatibility) */
 .petal {
   position: absolute;
   top: -50px;

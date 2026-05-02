@@ -1,112 +1,202 @@
-import React from "react";
+import { useMemo } from "react";
 import { useLocation, useParams } from "wouter";
 import { motion } from "framer-motion";
 import { FLOWER_DATA } from "@/lib/data";
-import FlowerStem from "@/components/FlowerStem";
 import Rose from "@/components/flowers/Rose";
 import Lavender from "@/components/flowers/Lavender";
 import Sunflower from "@/components/flowers/Sunflower";
 import Peony from "@/components/flowers/Peony";
 import Lily from "@/components/flowers/Lily";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import MusicButton from "@/components/MusicButton";
+import type { ReactElement } from "react";
 
-const getFlowerComponent = (type: string) => {
-  switch (type) {
-    case "rose": return <Rose />;
-    case "lavender": return <Lavender />;
-    case "sunflower": return <Sunflower />;
-    case "peony": return <Peony />;
-    case "lily": return <Lily />;
-    default: return <Rose />;
-  }
+const FLOWER_MAP: Record<string, ReactElement> = {
+  rose: <Rose />,
+  lavender: <Lavender />,
+  sunflower: <Sunflower />,
+  peony: <Peony />,
+  lily: <Lily />,
 };
+
+interface FloatingPetal {
+  id: number;
+  left: number;
+  top: number;
+  size: number;
+  delay: number;
+  duration: number;
+}
 
 export default function FlowerDetail() {
   const [, setLocation] = useLocation();
   const params = useParams();
   const id = parseInt(params.id || "1", 10);
-  const flower = FLOWER_DATA.find((f) => f.id === id) || FLOWER_DATA[0];
+  const flower = FLOWER_DATA.find((f) => f.id === id) ?? FLOWER_DATA[0];
 
-  const isLeftAligned = flower.leftPos <= 50;
+  const isFlowerLeft = flower.leftPos <= 50;
+
+  const petals = useMemo<FloatingPetal[]>(() => {
+    return Array.from({ length: 10 }, (_, i) => ({
+      id: i,
+      left: (i * 11) % 100,
+      top: (i * 9 + 5) % 90,
+      size: 10 + (i % 3) * 4,
+      delay: (i * 0.38) % 3,
+      duration: 5 + (i % 4),
+    }));
+  }, []);
+
+  const flowerBg = `radial-gradient(ellipse at center, ${flower.color}30 0%, ${flower.color}08 60%, transparent 100%)`;
+
+  const flowerSide = (
+    <div
+      className="relative flex items-center justify-center overflow-hidden"
+      style={{
+        background: flowerBg,
+        backgroundColor: "#0d1108",
+      }}
+    >
+      {/* Floating petals — CSS animated, precomputed */}
+      {petals.map((p) => (
+        <div
+          key={p.id}
+          className="petal-float absolute pointer-events-none rounded-full opacity-20"
+          style={{
+            left: `${p.left}%`,
+            top: `${p.top}%`,
+            width: p.size,
+            height: p.size * 0.65,
+            backgroundColor: flower.color,
+            borderRadius: "60% 0% 60% 0%",
+            animationDuration: `${p.duration}s`,
+            animationDelay: `${p.delay}s`,
+          }}
+        />
+      ))}
+
+      {/* Glow */}
+      <div
+        className="absolute pointer-events-none rounded-full"
+        style={{
+          top: "50%", left: "50%",
+          transform: "translate(-50%,-50%)",
+          width: "55%", height: "55%",
+          backgroundColor: flower.color,
+          opacity: 0.08,
+          filter: "blur(48px)",
+        }}
+      />
+
+      {/* Flower */}
+      <motion.div
+        className="relative z-10"
+        style={{ width: "clamp(140px, 30vw, 340px)", height: "clamp(140px, 30vw, 340px)" }}
+        animate={{ y: [0, -10, 0] }}
+        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        {FLOWER_MAP[flower.type]}
+      </motion.div>
+    </div>
+  );
+
+  const messageSide = (
+    <div
+      className="relative flex flex-col justify-center px-6 sm:px-10 md:px-12 lg:px-16 py-10 overflow-y-auto"
+      style={{ backgroundColor: "#fdf5ef" }}
+    >
+      <motion.div
+        className="max-w-sm mx-auto w-full"
+        initial={{ opacity: 0, y: 28 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.9, delay: 0.4 }}
+      >
+        {/* Back button */}
+        <button
+          onClick={() => setLocation("/")}
+          data-testid="btn-back-to-garden"
+          className="flex items-center gap-2 mb-8 group transition-colors"
+          style={{ color: `${flower.color}cc` }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            className="group-hover:-translate-x-1 transition-transform duration-200">
+            <path d="M19 12H5M12 5l-7 7 7 7" />
+          </svg>
+          <span className="text-sm tracking-wider" style={{ fontFamily: "'Playfair Display',Georgia,serif" }}>
+            Kembali ke Taman
+          </span>
+        </button>
+
+        {/* Flower name */}
+        <h1
+          className="font-bold mb-4 leading-tight"
+          style={{
+            fontFamily: "'Playfair Display',Georgia,serif",
+            fontSize: "clamp(1.8rem, 5vw, 3rem)",
+            color: flower.color,
+          }}
+        >
+          {flower.name}
+        </h1>
+
+        {/* Divider */}
+        <div
+          className="mb-7"
+          style={{
+            width: 48, height: 2, borderRadius: 1,
+            background: `linear-gradient(90deg, ${flower.color}, transparent)`,
+          }}
+        />
+
+        {/* Message */}
+        <p
+          className="leading-loose"
+          style={{
+            fontFamily: "'Playfair Display',Georgia,serif",
+            fontSize: "clamp(0.95rem, 2vw, 1.15rem)",
+            color: "#3a2020",
+            letterSpacing: "0.02em",
+          }}
+        >
+          {flower.message}
+        </p>
+
+        {/* Small decorative */}
+        <motion.p
+          className="mt-10 text-xs tracking-[0.25em]"
+          style={{ color: `${flower.color}80`, fontFamily: "'Playfair Display',Georgia,serif", fontStyle: "italic" }}
+          animate={{ opacity: [0.4, 0.9, 0.4] }}
+          transition={{ duration: 3.5, repeat: Infinity }}
+        >
+          ✦ dengan sepenuh hati ✦
+        </motion.p>
+      </motion.div>
+    </div>
+  );
 
   return (
-    <motion.div 
-      className="min-h-[100dvh] w-full flex flex-col md:flex-row bg-[#fdf8f5] dark:bg-[#1a0a0d]"
+    <motion.div
+      className="fixed inset-0 w-full h-full"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.8 }}
+      transition={{ duration: 0.7 }}
     >
-      {/* Flower Side */}
-      <div 
-        className={`w-full md:w-1/2 h-[50dvh] md:h-screen relative flex items-center justify-center overflow-hidden order-1 ${isLeftAligned ? "md:order-1" : "md:order-2"}`}
-        style={{ 
-          background: `radial-gradient(circle at center, ${flower.color}40 0%, ${flower.color}10 100%)` 
-        }}
-      >
-        <FlowerStem data={flower} index={0} isDetailed={true} onClick={() => {}}>
-          {getFlowerComponent(flower.type)}
-        </FlowerStem>
-        
-        {/* Floating background petals */}
-        <div className="absolute inset-0 pointer-events-none">
-          {[...Array(15)].map((_, i) => (
-            <motion.div
-              key={`bg-petal-${i}`}
-              className="absolute w-4 h-4 rounded-full opacity-30"
-              style={{
-                backgroundColor: flower.color,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                borderRadius: "10px 0px 10px 0px"
-              }}
-              animate={{
-                y: [0, -20, 0],
-                x: [0, Math.random() * 20 - 10, 0],
-                rotate: [0, 180, 360]
-              }}
-              transition={{
-                duration: 5 + Math.random() * 5,
-                repeat: Infinity,
-                ease: "linear"
-              }}
-            />
-          ))}
-        </div>
+      {/* Mobile: stack vertically. Desktop: side by side */}
+      <div className="w-full h-full flex flex-col md:flex-row">
+        {isFlowerLeft ? (
+          <>
+            <div className="w-full md:w-[45%] h-[42%] md:h-full">{flowerSide}</div>
+            <div className="w-full md:w-[55%] h-[58%] md:h-full">{messageSide}</div>
+          </>
+        ) : (
+          <>
+            <div className="w-full md:w-[55%] h-[58%] md:h-full md:order-1 order-2">{messageSide}</div>
+            <div className="w-full md:w-[45%] h-[42%] md:h-full md:order-2 order-1">{flowerSide}</div>
+          </>
+        )}
       </div>
 
-      {/* Message Side */}
-      <div className={`w-full md:w-1/2 min-h-[50dvh] md:h-screen flex flex-col justify-center px-8 md:px-16 lg:px-24 py-12 order-2 ${isLeftAligned ? "md:order-2" : "md:order-1"}`}>
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.5 }}
-          className="max-w-md mx-auto w-full"
-        >
-          <h1 className="text-4xl md:text-5xl font-serif text-foreground mb-6" style={{ color: flower.color }}>
-            {flower.name}
-          </h1>
-          
-          <div className="w-12 h-px bg-border mb-8" style={{ backgroundColor: flower.color, opacity: 0.5 }} />
-          
-          <p className="text-lg md:text-xl font-serif leading-relaxed text-foreground/80 whitespace-pre-line tracking-wide">
-            {flower.message}
-          </p>
-          
-          <div className="mt-16">
-            <Button 
-              variant="ghost" 
-              className="group hover:bg-transparent pl-0 text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setLocation("/")}
-              data-testid="btn-back-to-garden"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-              Kembali ke Taman
-            </Button>
-          </div>
-        </motion.div>
-      </div>
+      <MusicButton />
     </motion.div>
   );
 }

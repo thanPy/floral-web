@@ -1,4 +1,4 @@
-import React from "react";
+import { useMemo } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { FLOWER_DATA } from "@/lib/data";
@@ -8,61 +8,91 @@ import Lavender from "@/components/flowers/Lavender";
 import Sunflower from "@/components/flowers/Sunflower";
 import Peony from "@/components/flowers/Peony";
 import Lily from "@/components/flowers/Lily";
+import MusicButton from "@/components/MusicButton";
+import type { ReactElement } from "react";
 
-const getFlowerComponent = (type: string) => {
-  switch (type) {
-    case "rose": return <Rose />;
-    case "lavender": return <Lavender />;
-    case "sunflower": return <Sunflower />;
-    case "peony": return <Peony />;
-    case "lily": return <Lily />;
-    default: return <Rose />;
-  }
+const FLOWER_MAP: Record<string, ReactElement> = {
+  rose: <Rose />,
+  lavender: <Lavender />,
+  sunflower: <Sunflower />,
+  peony: <Peony />,
+  lily: <Lily />,
 };
+
+interface Particle {
+  id: number;
+  left: number;
+  top: number;
+  delay: number;
+  duration: number;
+  size: number;
+}
 
 export default function Garden() {
   const [, setLocation] = useLocation();
 
+  const particles = useMemo<Particle[]>(() => {
+    return Array.from({ length: 18 }, (_, i) => ({
+      id: i,
+      left: (i * 5.7) % 100,
+      top: (i * 7.3) % 90,
+      delay: (i * 0.41) % 5,
+      duration: 3.5 + (i % 5),
+      size: i % 2 === 0 ? 3 : 4,
+    }));
+  }, []);
+
   return (
-    <motion.div 
-      className="min-h-[100dvh] w-full relative overflow-hidden bg-gradient-to-b from-[#1a0a0d] via-[#2d1219] to-[#0a1510]"
+    <motion.div
+      className="fixed inset-0 w-full h-full overflow-hidden"
+      style={{
+        background: "linear-gradient(to bottom, #110407 0%, #1e0a10 35%, #0d1a10 80%, #061008 100%)",
+      }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 1 }}
+      transition={{ duration: 0.9 }}
     >
-      {/* Ambient particles */}
-      <div className="absolute inset-0 pointer-events-none">
-        {[...Array(30)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-yellow-200/40 rounded-full blur-[1px]"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, -30, 0],
-              opacity: [0.2, 0.8, 0.2],
-              scale: [1, 1.5, 1],
-            }}
-            transition={{
-              duration: 3 + Math.random() * 4,
-              repeat: Infinity,
-              delay: Math.random() * 5,
-            }}
-          />
-        ))}
-      </div>
+      {/* Ambient light — static, no animation */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          top: "-10%", left: "50%", transform: "translateX(-50%)",
+          width: "70vw", height: "60vh",
+          background: "radial-gradient(ellipse, rgba(180,40,70,0.08) 0%, transparent 70%)",
+          filter: "blur(30px)",
+        }}
+      />
 
-      {/* Moon / Light source */}
-      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-rose-500/5 rounded-full blur-[100px] pointer-events-none" />
+      {/* Firefly particles — CSS animated, precomputed */}
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="firefly absolute rounded-full pointer-events-none"
+          style={{
+            left: `${p.left}%`,
+            top: `${p.top}%`,
+            width: p.size,
+            height: p.size,
+            backgroundColor: "#fef9c3",
+            opacity: 0.35,
+            animationDuration: `${p.duration}s`,
+            animationDelay: `${p.delay}s`,
+          }}
+        />
+      ))}
 
-      {/* Garden Ground */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent z-0 opacity-80" />
+      {/* Ground grass */}
+      <div
+        className="absolute bottom-0 left-0 right-0 pointer-events-none"
+        style={{
+          height: "18%",
+          background: "linear-gradient(to top, #020a04 0%, #071510 40%, transparent 100%)",
+        }}
+      />
 
-      {/* Flowers */}
-      <div className="absolute inset-0 max-w-6xl mx-auto z-10">
+      {/* Flowers container — full screen, flowers positioned by % */}
+      <div className="absolute inset-0">
         {FLOWER_DATA.map((flower, idx) => (
           <FlowerStem
             key={flower.id}
@@ -70,26 +100,33 @@ export default function Garden() {
             index={idx}
             onClick={() => setLocation(`/flower/${flower.id}`)}
           >
-            {getFlowerComponent(flower.type)}
+            {FLOWER_MAP[flower.type]}
           </FlowerStem>
         ))}
       </div>
 
-      {/* Prompt */}
-      <motion.div 
-        className="absolute bottom-8 left-0 right-0 text-center z-20 pointer-events-none"
+      {/* Prompt label */}
+      <motion.div
+        className="absolute bottom-4 sm:bottom-6 left-0 right-0 text-center z-20 pointer-events-none"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 6, duration: 2 }}
+        transition={{ delay: 2.5, duration: 1.5 }}
       >
-        <motion.p 
-          className="text-rose-200/70 font-serif italic text-lg tracking-widest"
-          animate={{ opacity: [0.5, 1, 0.5] }}
+        <motion.p
+          className="text-rose-200/60 italic tracking-widest"
+          style={{
+            fontFamily: "'Playfair Display', Georgia, serif",
+            fontSize: "clamp(0.7rem, 2vw, 1rem)",
+          }}
+          animate={{ opacity: [0.4, 0.9, 0.4] }}
           transition={{ duration: 3, repeat: Infinity }}
         >
           ✦ Klik bunga untuk pesanku ✦
         </motion.p>
       </motion.div>
+
+      {/* Music control */}
+      <MusicButton />
     </motion.div>
   );
 }
