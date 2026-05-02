@@ -27,12 +27,21 @@ interface FloatingPetal {
   duration: number;
 }
 
+function getReadableTextColor(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.65 ? "#1a1209" : hex;
+}
+
 export default function FlowerDetail() {
   const [, setLocation] = useLocation();
   const params = useParams();
   const id = parseInt(params.id || "1", 10);
   const flower = FLOWER_DATA.find((f) => f.id === id) ?? FLOWER_DATA[0];
 
+  const textColor = getReadableTextColor(flower.color);
   const isFlowerLeft = flower.leftPos <= 50;
 
   const petals = useMemo<FloatingPetal[]>(() => {
@@ -115,7 +124,7 @@ export default function FlowerDetail() {
           onClick={() => setLocation("/")}
           data-testid="btn-back-to-garden"
           className="flex items-center gap-2 mb-8 group transition-colors"
-          style={{ color: `${flower.color}cc` }}
+          style={{ color: `${textColor}cc` }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
             className="group-hover:-translate-x-1 transition-transform duration-200">
@@ -132,7 +141,7 @@ export default function FlowerDetail() {
           style={{
             fontFamily: "'Playfair Display',Georgia,serif",
             fontSize: "clamp(1.8rem, 5vw, 3rem)",
-            color: flower.color,
+            color: textColor,
           }}
         >
           {flower.name}
@@ -163,7 +172,7 @@ export default function FlowerDetail() {
         {/* Small decorative */}
         <motion.p
           className="mt-10 text-xs tracking-[0.25em]"
-          style={{ color: `${flower.color}80`, fontFamily: "'Playfair Display',Georgia,serif", fontStyle: "italic" }}
+          style={{ color: `${textColor}80`, fontFamily: "'Playfair Display',Georgia,serif", fontStyle: "italic" }}
           animate={{ opacity: [0.4, 0.9, 0.4] }}
           transition={{ duration: 3.5, repeat: Infinity }}
         >
